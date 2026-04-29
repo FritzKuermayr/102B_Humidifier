@@ -1,22 +1,23 @@
-# Anschlussbild — `esp32_humidity_control`
+# Wiring — `esp32_humidity_control`
 
-Variante **ohne Taster**, vollautomatisch nach Sensorwert.
+Variant **without switch**, fully automatic based on the sensor reading.
 
-## Pin-Zuordnung
+## Pin assignment
 
-| Funktion       | Feather V2 Pin     | Kabelfarbe        |
+| Function       | Feather V2 pin     | Wire color        |
 |----------------|--------------------|-------------------|
-| MOSFET SIG     | `27`               | lila              |
-| MOSFET VCC     | `3V`               | blau (MOSFET)     |
-| MOSFET GND     | `GND` (links)      | grau              |
-| SHT40 VCC      | `3V`               | rot               |
-| SHT40 GND      | `GND` (rechts)     | blau (SHT40)      |
-| SHT40 SDA      | `SDA`  (= GPIO22)  | weiss             |
+| MOSFET SIG     | `27`               | purple            |
+| MOSFET VCC     | `3V`               | blue (MOSFET)     |
+| MOSFET GND     | `GND` (left)       | gray              |
+| SHT40 VCC      | `3V`               | red               |
+| SHT40 GND      | `GND` (right)      | blue (SHT40)      |
+| SHT40 SDA      | `SDA`  (= GPIO22)  | white             |
 | SHT40 SCL      | `SCL`  (= GPIO20)  | orange            |
 
-`3V` wird von MOSFET-VCC und SHT40-VCC gemeinsam genutzt — beide Drähte in denselben `3V`-Pin stecken (verzwirbeln oder Mini-Steckbrett).
+`3V` is shared between MOSFET VCC and SHT40 VCC — twist the two leads
+together and stick them into the same `3V` pin (or use a small breadboard).
 
-## ASCII-Diagramm
+## ASCII diagram
 
 ```text
                        ┌──── USB-C ────┐
@@ -38,40 +39,40 @@ Variante **ohne Taster**, vollautomatisch nach Sensorwert.
    │   │       TX   ───┤  [STEMMA QT]   ├───  37      │ ││
    │   │            └────────────────┘             │ ││
    │   │                                            │ ││
-   │   │   MOSFET-Modul (DFRobot Gravity)           │ ││
-   │   │   ──────────────────────────                │ ││
-   │   │   grau   (GND)  ─┐                          │ ││
-   │   │                  └─────────► GND (links)    │ ││
-   ├───│── blau   (VCC)  ─────────► 3V               │ ││
-   │   │   lila   (SIG)  ─────────────────────────── │─┘│
+   │   │   MOSFET module (DFRobot Gravity)          │ ││
+   │   │   ────────────────────────────             │ ││
+   │   │   gray   (GND)  ─┐                          │ ││
+   │   │                  └─────────► GND (left)     │ ││
+   ├───│── blue   (VCC)  ─────────► 3V               │ ││
+   │   │   purple (SIG)  ─────────────────────────── │─┘│
    │   │                                             │  │
    │   │   SHT40                                     │  │
    │   │   ─────                                     │  │
-   ├───│── rot    (VCC)  ─────────► 3V               │  │
-   │   │   blau   (GND)  ─────────► GND (rechts) ────┘  │
-   │   │   weiss  (SDA)  ─────────► SDA                 │
+   ├───│── red    (VCC)  ─────────► 3V               │  │
+   │   │   blue   (GND)  ─────────► GND (right) ─────┘  │
+   │   │   white  (SDA)  ─────────► SDA                 │
    │   │   orange (SCL)  ────────────────────────────── ┘
 ```
 
-## Stromversorgung
+## Power
 
-- **Feather:** USB-C oder LiPo am JST-PH-Stecker (3.7 V einzellig)
-- **Mistifyer:** externe Versorgung an MOSFET-Schraubklemmen `VIN` / `GND`
-- **Pflicht:** externe-Supply-`GND`  ↔  Feather-`GND` (gemeinsame Masse)
+- **Feather:** USB-C, or a single-cell 3.7 V LiPo on the JST-PH connector.
+- **Mister:** external supply on the MOSFET screw terminals `VIN` / `GND`.
+- **Required:** external-supply `GND`  ↔  Feather `GND`  (common ground).
 
 ```text
-ext. Supply +V   ────►  MOSFET VIN  (Schraubklemme)
-ext. Supply GND  ────►  MOSFET GND  (Schraubklemme)
-ext. Supply GND  ────►  Feather GND   (gemeinsame Masse, Pflicht!)
-MOSFET VOUT      ────►  Mistifyer +
-ext. Supply GND  ────►  Mistifyer −
+ext. supply +V   ────►  MOSFET VIN   (screw terminal)
+ext. supply GND  ────►  MOSFET GND   (screw terminal)
+ext. supply GND  ────►  Feather GND  (common ground - mandatory)
+MOSFET VOUT      ────►  Mister +
+ext. supply GND  ────►  Mister −
 ```
 
-## Logik-Zusammenfassung
+## Logic summary
 
-| RH                     | MOSFET                       |
-|------------------------|------------------------------|
-| < 78,0 %               | **AN** (Mistifyer laeuft)    |
-| ≥ 80,0 %               | aus (Sensor sperrt)          |
-| 78 – 80 %              | aktueller Zustand bleibt     |
-| Sensor nicht erreicht  | aus (fail-safe)              |
+| RH                     | MOSFET                         |
+|------------------------|--------------------------------|
+| < 78.0 %               | **ON** (mister runs)           |
+| ≥ 80.0 %               | OFF (sensor blocks)            |
+| 78 – 80 %              | hold current state             |
+| sensor unreachable     | OFF (fail-safe)                |

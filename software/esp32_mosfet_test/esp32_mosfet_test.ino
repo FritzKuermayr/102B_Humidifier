@@ -1,40 +1,40 @@
-// MOSFET-Test fuer Adafruit ESP32 Feather V2
-// Manuelle Steuerung von GPIO27 (-> Gravity MOSFET SIG, lila) ueber Serial.
-// Zweck: Schalt-/Spannungstest am MOSFET-Ausgang.
+// MOSFET test for Adafruit ESP32 Feather V2
+// Manual control of GPIO27 (-> Gravity MOSFET SIG, purple wire) via Serial.
+// Purpose: verify that the MOSFET cleanly switches the external supply.
 //
-// MOSFET-Modul -> Feather:
-//   lila (SIG) -> 27
-//   blau (VCC) -> 3V
-//   grau (GND) -> GND
+// MOSFET module -> Feather:
+//   purple (SIG) -> 27
+//   blue   (VCC) -> 3V
+//   gray   (GND) -> GND
 //
-// HINWEIS: Dieses Modul ist active-low.
-//   SIG LOW  -> MOSFET AN  (Status-LED leuchtet)
-//   SIG HIGH -> MOSFET AUS (Status-LED aus)
-// Die Logik im Code dreht das so, dass "1" = MOSFET AN bleibt.
+// NOTE: This module is active-low.
+//   SIG LOW  -> MOSFET ON  (status LED on)
+//   SIG HIGH -> MOSFET OFF (status LED off)
+// The code below inverts the polarity so "1" still means MOSFET ON.
 //
-// Serial-Kommandos (115200 Baud, "Newline" als Zeilenendung):
-//   1  -> MOSFET AN  (GPIO27 HIGH)
-//   0  -> MOSFET AUS (GPIO27 LOW)
-//   t  -> umschalten
-//   s  -> aktuellen Status ausgeben
-//   h  -> Hilfe
+// Serial commands (115200 baud, line ending "Newline"):
+//   1  -> MOSFET ON  (GPIO27 LOW)
+//   0  -> MOSFET OFF (GPIO27 HIGH)
+//   t  -> toggle
+//   s  -> print current status
+//   h  -> help
 //
-// WICHTIG fuer die Widerstandsmessung:
-//   * Externe Versorgungsspannung VOR der Messung abklemmen.
-//     Multimeter im Ohm-Modus speist eine kleine Pruefspannung ein und
-//     liefert nur dann sinnvolle Werte, wenn keine Fremdspannung anliegt.
-//   * Multimeter zwischen MOSFET VOUT (+) und VOUT (-)/GND der Lastseite.
-//   * Erwartung:
-//       AN  -> sehr niedrig (typ. < 1 Ohm, RDS_on des FET)
-//       AUS -> sehr hoch / OL (Multimeter zeigt offen an)
+// For resistance measurement:
+//   * Disconnect the external supply BEFORE measuring with an ohmmeter.
+//     Ohms mode injects a small test voltage and only gives sensible
+//     readings when no foreign voltage is present on the rail.
+//   * Probe between MOSFET VOUT (+) and the load-side VOUT (-) / GND.
+//   * Expected values:
+//       ON  -> very low (typ. < 1 ohm, the FET's RDS_on)
+//       OFF -> very high / OL (multimeter shows "open")
 
 const uint8_t MOSFET_PIN = 27;
-const bool MOSFET_ACTIVE_LOW = true;  // siehe Header-Kommentar
+const bool MOSFET_ACTIVE_LOW = true;  // see header note
 
 bool mosfetState = false;
 
 void applyState() {
-  // Bei active-low: ON -> Pin LOW, OFF -> Pin HIGH
+  // Active-low: ON -> pin LOW, OFF -> pin HIGH.
   bool pinHigh = MOSFET_ACTIVE_LOW ? !mosfetState : mosfetState;
   digitalWrite(MOSFET_PIN, pinHigh ? HIGH : LOW);
   Serial.print("MOSFET ");
@@ -55,10 +55,10 @@ void printHelp() {
 }
 
 void setup() {
-  // Idle-Pegel = MOSFET AUS. Bei active-low ist das HIGH.
+  // Idle level = MOSFET OFF. For active-low this is HIGH.
   uint8_t idleLevel = MOSFET_ACTIVE_LOW ? HIGH : LOW;
 
-  // Erst Idle-Level schreiben, dann auf OUTPUT -> kein Glitch beim Boot.
+  // Write idle level first, then set to OUTPUT -> no boot glitch.
   digitalWrite(MOSFET_PIN, idleLevel);
   pinMode(MOSFET_PIN, OUTPUT);
   digitalWrite(MOSFET_PIN, idleLevel);
@@ -101,7 +101,7 @@ void loop() {
     case '\r':
     case '\n':
     case ' ':
-      // Ignorieren - Newlines, CR, Leerzeichen.
+      // Ignore newlines, CR, spaces.
       break;
     default:
       Serial.print("Unknown command: ");

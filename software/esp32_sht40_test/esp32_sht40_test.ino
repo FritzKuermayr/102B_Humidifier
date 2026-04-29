@@ -1,22 +1,22 @@
-// SHT40-Test fuer Adafruit ESP32 Feather V2
-// Liest Temperatur und Luftfeuchte alle 2 s und gibt sie ueber Serial aus.
+// SHT40 test for Adafruit ESP32 Feather V2
+// Reads temperature and relative humidity every 2 s and prints to Serial.
 //
-// I2C-Pins (Feather V2 Default):
+// I2C pins (Feather V2 default):
 //   SDA = 22, SCL = 20
-// -> kollidiert NICHT mit dem MOSFET-Sketch (GPIO27).
+// -> does NOT collide with the MOSFET sketch (GPIO27).
 //
 // SHT40 -> Feather:
-//   rot    (VCC) -> 3V
-//   blau   (GND) -> GND
-//   weiss  (SDA) -> SDA  (GPIO22)
+//   red    (VCC) -> 3V
+//   blue   (GND) -> GND
+//   white  (SDA) -> SDA  (GPIO22)
 //   orange (SCL) -> SCL  (GPIO20)
 //
-// Alternativ: Adafruit STEMMA QT Kabel direkt in die QT-Buchse
-// auf dem Feather V2 stecken -> selbe Belegung, ohne Verkabelung.
+// Alternative: plug an Adafruit STEMMA QT cable directly into the QT
+// connector on the Feather V2 -> same wiring, no soldering.
 //
 // Library: "Adafruit SHT4x Library"
 //   Arduino IDE -> Tools -> Manage Libraries -> "Adafruit SHT4x" -> Install
-//   (zieht "Adafruit BusIO" und "Adafruit Unified Sensor" als Abhaengigkeit mit)
+//   (pulls in "Adafruit BusIO" and "Adafruit Unified Sensor" as deps)
 
 #include <Wire.h>
 #include "Adafruit_SHT4x.h"
@@ -32,7 +32,7 @@ void setup() {
   Serial.println("SHT40 test starting...");
 
 #if defined(I2C_POWER)
-  // Feather V2: schaltet die I2C-/STEMMA-QT-Versorgung ein.
+  // Feather V2: enable the I2C / STEMMA QT power rail.
   pinMode(I2C_POWER, OUTPUT);
   digitalWrite(I2C_POWER, HIGH);
   delay(10);
@@ -42,7 +42,7 @@ void setup() {
 
   if (!sht4.begin()) {
     Serial.println("SHT40 not found.");
-    Serial.println("Check wiring: SDA=22 (weiss), SCL=20 (orange), VCC=3V (rot), GND (blau).");
+    Serial.println("Check wiring: SDA=22 (white), SCL=20 (orange), VCC=3V (red), GND (blue).");
     while (true) {
       delay(1000);
     }

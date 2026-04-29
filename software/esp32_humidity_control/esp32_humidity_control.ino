@@ -1,44 +1,44 @@
-// Humidity-Controller fuer Adafruit ESP32 Feather V2
-// SHT40 + DFRobot Gravity MOSFET (active-low), vollautomatisch.
+// Humidity controller for Adafruit ESP32 Feather V2
+// SHT40 + DFRobot Gravity MOSFET (active-low), fully automatic.
 //
-// Verhalten:
-//   RH <  78.0 %  -> MOSFET AN  (Mistifyer laeuft)
-//   RH >= 80.0 %  -> MOSFET AUS
-//   zwischen 78 und 80 -> aktuellen Zustand halten (Hysterese gegen Flattern)
-//   Sensor-Fehler / -Ausfall -> MOSFET AUS (fail-safe)
+// Behaviour:
+//   RH <  78.0 %  -> MOSFET ON  (mister runs)
+//   RH >= 80.0 %  -> MOSFET OFF
+//   between 78 and 80 -> hold current state (hysteresis prevents flicker)
+//   sensor error / sensor missing -> MOSFET OFF (fail-safe)
 //
 // Pins (Feather V2):
-//   MOSFET SIG (lila)   -> 27
-//   MOSFET VCC (blau)   -> 3V
-//   MOSFET GND (grau)   -> GND
-//   SHT40 VCC  (rot)    -> 3V
-//   SHT40 GND  (blau)   -> GND
-//   SHT40 SDA  (weiss)  -> SDA  (GPIO22)
-//   SHT40 SCL  (orange) -> SCL  (GPIO20)
+//   MOSFET SIG (purple) -> 27
+//   MOSFET VCC (blue)   -> 3V
+//   MOSFET GND (gray)   -> GND
+//   SHT40  VCC (red)    -> 3V
+//   SHT40  GND (blue)   -> GND
+//   SHT40  SDA (white)  -> SDA  (GPIO22)
+//   SHT40  SCL (orange) -> SCL  (GPIO20)
 //
 // Library: Adafruit SHT4x (Library Manager)
 //
-// Serial: 115200, Newline.
-//   s -> Status anzeigen
-//   h -> Hilfe
+// Serial: 115200 baud, line ending "Newline".
+//   s -> show status
+//   h -> help
 
 #include <Wire.h>
 #include "Adafruit_SHT4x.h"
 
-// ---------- Konfiguration ----------
+// ---------- Configuration ----------
 const uint8_t MOSFET_PIN = 27;
 const bool    MOSFET_ACTIVE_LOW = true;
 
-const float HUMIDITY_LIMIT_HIGH = 80.0;  // >= -> AUS
-const float HUMIDITY_LIMIT_LOW  = 78.0;  // <   -> AN erlaubt
+const float HUMIDITY_LIMIT_HIGH = 80.0;  // >= -> OFF
+const float HUMIDITY_LIMIT_LOW  = 78.0;  // <   -> ON allowed
 
 const uint32_t SAMPLE_INTERVAL_MS = 2000;
 
-// ---------- Laufzeit-Status ----------
+// ---------- Runtime state ----------
 Adafruit_SHT4x sht4;
 bool sensorOk = false;
 
-// true = sperren (zu feucht oder Sensorfehler). Boot-Default: gesperrt.
+// true = blocked (too humid or sensor failure). Boot default: blocked.
 bool humidityBlocks = true;
 bool currentMosfetOn = false;
 
@@ -93,7 +93,7 @@ void printHelp() {
 
 // ---------- Setup ----------
 void setup() {
-  // MOSFET sicher AUS bevor pinMode greift (active-low: HIGH = aus).
+  // Force MOSFET pin to OFF level before pinMode (active-low: HIGH = off).
   uint8_t idleLevel = MOSFET_ACTIVE_LOW ? HIGH : LOW;
   digitalWrite(MOSFET_PIN, idleLevel);
   pinMode(MOSFET_PIN, OUTPUT);
@@ -105,7 +105,7 @@ void setup() {
   Serial.println("Humidity controller starting...");
 
 #if defined(I2C_POWER)
-  // Feather V2: I2C-/STEMMA-QT-Versorgung einschalten.
+  // Feather V2: enable the I2C / STEMMA QT power rail.
   pinMode(I2C_POWER, OUTPUT);
   digitalWrite(I2C_POWER, HIGH);
   delay(10);
@@ -134,7 +134,7 @@ void setup() {
   printStatus();
 }
 
-// ---------- Sensor / Hysterese ----------
+// ---------- Sensor / hysteresis ----------
 void readSensorIfDue() {
   uint32_t now = millis();
   if (now - lastSampleMs < SAMPLE_INTERVAL_MS) return;
@@ -161,7 +161,7 @@ void readSensorIfDue() {
   Serial.print(lastRh, 2);
   Serial.println(" %");
 
-  // Hysterese: oben sperren, unter LOW wieder freigeben.
+  // Hysteresis: block above HIGH, release below LOW.
   if (lastRh >= HUMIDITY_LIMIT_HIGH) {
     if (!humidityBlocks) {
       Serial.println(">> Humidity limit reached - blocking MOSFET.");
@@ -173,10 +173,10 @@ void readSensorIfDue() {
     }
     humidityBlocks = false;
   }
-  // Zwischen LOW und HIGH: Block-Zustand halten.
+  // Between LOW and HIGH: keep current block state.
 }
 
-// ---------- Serial-Befehle ----------
+// ---------- Serial commands ----------
 void readSerial() {
   while (Serial.available()) {
     int c = Serial.read();

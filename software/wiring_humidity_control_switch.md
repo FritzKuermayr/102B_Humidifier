@@ -1,38 +1,40 @@
-# Anschlussbild — `esp32_humidity_control_switch`
+# Wiring — `esp32_humidity_control_switch`
 
-Variante **mit Kipp-/Schiebe-Schalter** als manuelle An/Aus-Anforderung; Sensor sperrt zusaetzlich nach oben.
+Variant **with toggle / slide switch** for a manual on/off request; the
+sensor still blocks the MOSFET above the upper threshold.
 
-Die Schalter-Position bestimmt direkt `userWantsOn`:
+The switch position directly maps to `userWantsOn`:
 
-- Schalter **geschlossen** (Pin → GND, LOW) → `userWantsOn = YES`
-- Schalter **offen**       (Pin = HIGH)     → `userWantsOn = no`
+- switch **closed** (pin → GND, LOW) → `userWantsOn = YES`
+- switch **open**   (pin = HIGH)     → `userWantsOn = no`
 
-Bei einem reinen Push-Button (Momentary) wuerde der Mistifyer nur waehrend
-der Druckdauer laufen — dafuer lieber das Serial-Kommando `t` benutzen.
+For a momentary push-button the mister would only run while the button is
+held — in that case use the Serial `t` command instead.
 
-## Pin-Zuordnung
+## Pin assignment
 
-| Funktion        | Feather V2 Pin     | Kabelfarbe        |
-|-----------------|--------------------|-------------------|
-| MOSFET SIG      | `27`               | lila              |
-| MOSFET VCC      | `3V`               | blau (MOSFET)     |
-| MOSFET GND      | `GND` (links)      | grau              |
-| SHT40 VCC       | `3V`               | rot               |
-| SHT40 GND       | `GND` (rechts)     | blau (SHT40)      |
-| SHT40 SDA       | `SDA`  (= GPIO22)  | weiss             |
-| SHT40 SCL       | `SCL`  (= GPIO20)  | orange            |
-| **Taster Pin 1**| **`33`**           | beliebig          |
-| **Taster Pin 2**| **`GND` (geteilt)**| beliebig          |
+| Function          | Feather V2 pin     | Wire color        |
+|-------------------|--------------------|-------------------|
+| MOSFET SIG        | `27`               | purple            |
+| MOSFET VCC        | `3V`               | blue (MOSFET)     |
+| MOSFET GND        | `GND` (left)       | gray              |
+| SHT40 VCC         | `3V`               | red               |
+| SHT40 GND         | `GND` (right)      | blue (SHT40)      |
+| SHT40 SDA         | `SDA`  (= GPIO22)  | white             |
+| SHT40 SCL         | `SCL`  (= GPIO20)  | orange            |
+| **Switch pin 1**  | **`33`**           | any               |
+| **Switch pin 2**  | **`GND` (shared)** | any               |
 
-`3V` teilen sich MOSFET-VCC und SHT40-VCC. Der **Taster-GND** muss sich einen
-der beiden GND-Pins mit MOSFET-GND oder SHT40-GND teilen, weil der Feather V2
-nur zwei GND-Pins auf den Stiftleisten hat. Praktisch: Taster-GND mit
-MOSFET-GND (grau) verzwirbeln und gemeinsam in `GND` (links) stecken.
+`3V` is shared between MOSFET VCC and SHT40 VCC. The **switch GND** has to
+share one of the two GND pins with either MOSFET GND or SHT40 GND because
+the Feather V2 only has two GND pins on its headers. Easiest: twist the
+switch GND with the MOSFET GND (gray) and stick both into `GND` (left).
 
-Polung des Tasters egal — beim Druecken wird `33` ueber den Taster auf `GND`
-gezogen, der ESP32 zieht den Pin intern auf HIGH (`INPUT_PULLUP`).
+Switch polarity does not matter — when the switch is closed, `33` is
+pulled to `GND` through the switch; when open, the ESP32 internally pulls
+the pin HIGH (`INPUT_PULLUP`).
 
-## ASCII-Diagramm
+## ASCII diagram
 
 ```text
                        ┌──── USB-C ────┐
@@ -54,54 +56,54 @@ gezogen, der ESP32 zieht den Pin intern auf HIGH (`INPUT_PULLUP`).
    │   │       TX   ───┤  [STEMMA QT]   ├───  37     ││ ││
    │   │            └────────────────┘            ││ ││
    │   │                                           ││ ││
-   │   │   MOSFET-Modul (DFRobot Gravity)          ││ ││
-   │   │   ──────────────────────────              ││ ││
-   │   │   grau   (GND)  ──┐                       ││ ││
-   │   │                   ├──► GND (links)        ││ ││
-   │   │   Taster Pin 2 ───┘   (gemeinsam)         ││ ││
+   │   │   MOSFET module (DFRobot Gravity)         ││ ││
+   │   │   ────────────────────────────            ││ ││
+   │   │   gray   (GND)  ──┐                       ││ ││
+   │   │                   ├──► GND (left)         ││ ││
+   │   │   Switch pin 2 ───┘    (shared)           ││ ││
    │   │                                           ││ ││
-   ├───│── blau   (VCC)  ──────► 3V                ││ ││
-   │   │   lila   (SIG)  ─────────────────────────  │ ││
-   │   │   Taster Pin 1  ─────────────────────────── ┘ ││
+   ├───│── blue   (VCC)  ──────► 3V                ││ ││
+   │   │   purple (SIG)  ─────────────────────────  │ ││
+   │   │   Switch pin 1  ─────────────────────────── ┘ ││
    │   │                                                 ││
    │   │   SHT40                                         ││
    │   │   ─────                                         ││
-   ├───│── rot    (VCC)  ──────► 3V                      ││
-   │   │   blau   (GND)  ──────► GND (rechts) ───────────┘│
-   │   │   weiss  (SDA)  ──────► SDA                      │
+   ├───│── red    (VCC)  ──────► 3V                      ││
+   │   │   blue   (GND)  ──────► GND (right) ────────────┘│
+   │   │   white  (SDA)  ──────► SDA                      │
    │   │   orange (SCL)  ───────────────────────────────── ┘
 ```
 
-## Stromversorgung
+## Power
 
-- **Feather:** USB-C oder LiPo am JST-PH-Stecker (3.7 V einzellig)
-- **Mistifyer:** externe Versorgung an MOSFET-Schraubklemmen `VIN` / `GND`
-- **Pflicht:** externe-Supply-`GND`  ↔  Feather-`GND` (gemeinsame Masse)
+- **Feather:** USB-C, or a single-cell 3.7 V LiPo on the JST-PH connector.
+- **Mister:** external supply on the MOSFET screw terminals `VIN` / `GND`.
+- **Required:** external-supply `GND`  ↔  Feather `GND`  (common ground).
 
 ```text
-ext. Supply +V   ────►  MOSFET VIN  (Schraubklemme)
-ext. Supply GND  ────►  MOSFET GND  (Schraubklemme)
-ext. Supply GND  ────►  Feather GND   (gemeinsame Masse, Pflicht!)
-MOSFET VOUT      ────►  Mistifyer +
-ext. Supply GND  ────►  Mistifyer −
+ext. supply +V   ────►  MOSFET VIN   (screw terminal)
+ext. supply GND  ────►  MOSFET GND   (screw terminal)
+ext. supply GND  ────►  Feather GND  (common ground - mandatory)
+MOSFET VOUT      ────►  Mister +
+ext. supply GND  ────►  Mister −
 ```
 
-## Logik-Zusammenfassung
+## Logic summary
 
-| Schalter-Position    | RH                | MOSFET                |
-|----------------------|-------------------|-----------------------|
-| offen (`userWantsOn=no`)   | egal        | aus                   |
-| geschlossen (`userWantsOn=YES`) | < 78,0 % | **AN**              |
-| geschlossen          | ≥ 80,0 %          | aus (Sensor sperrt)   |
-| geschlossen          | 78 – 80 %         | aktueller Zustand     |
-| egal                 | Sensor-Fehler     | aus (fail-safe)       |
+| Switch position             | RH                | MOSFET                    |
+|-----------------------------|-------------------|---------------------------|
+| open (`userWantsOn=no`)     | any               | OFF                       |
+| closed (`userWantsOn=YES`)  | < 78.0 %          | **ON**                    |
+| closed                      | ≥ 80.0 %          | OFF (sensor blocks)       |
+| closed                      | 78 – 80 %         | hold current state        |
+| any                         | sensor error      | OFF (fail-safe)           |
 
-`userWantsOn` folgt immer der aktuellen Schalter-Position. Bleibt der
-Schalter geschlossen waehrend RH ueber 80 % steigt, wird der Mistifyer
-zwangsweise abgeschaltet — sobald RH wieder unter 78 % faellt, laeuft er
-von selbst weiter.
+`userWantsOn` always follows the current switch position. If the switch
+stays closed while RH rises above 80 %, the mister is forced off — once
+RH drops below 78 % again, it resumes automatically.
 
-## Test ohne Hardware-Taster
+## Testing without a hardware switch
 
-Im Serial Monitor (115200, Newline) das Zeichen `t` schicken — wirkt wie ein
-Tastendruck. Mit `s` den aktuellen Status abrufen, mit `h` die Hilfe.
+In the Serial Monitor (115200 baud, line ending "Newline") send the
+character `t` — same effect as flipping the switch. Use `s` for the
+current status and `h` for help.

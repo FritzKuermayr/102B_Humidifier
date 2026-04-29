@@ -1,68 +1,68 @@
-// Humidity-Controller MIT Schalter, fuer Adafruit ESP32 Feather V2.
-// SHT40 + DFRobot Gravity MOSFET (active-low) + Taster.
+// Humidity controller WITH switch, for Adafruit ESP32 Feather V2.
+// SHT40 + DFRobot Gravity MOSFET (active-low) + toggle/slide switch.
 //
-// Verhalten:
-//   Schalter-Position bestimmt direkt die "User-Anforderung":
-//     Schalter geschlossen (Pin LOW)  -> userWantsOn = YES
-//     Schalter offen       (Pin HIGH) -> userWantsOn = no
-//   MOSFET ist genau dann AN, wenn:
-//     userWantsOn  = true   UND
-//     humidityBlocks = false  (Hysterese erlaubt es)
+// Behaviour:
+//   The switch position directly maps to "user request":
+//     switch closed (pin LOW)  -> userWantsOn = YES
+//     switch open   (pin HIGH) -> userWantsOn = no
+//   MOSFET is ON exactly when:
+//     userWantsOn = true  AND  humidityBlocks = false  (hysteresis allows it)
 //
-//   Damit funktioniert sowohl ein klassischer Kippschalter als auch ein
-//   Schiebe-Schalter: jede Schalter-Bewegung loest sofort eine Zustands-
-//   aenderung aus. (Bei einem reinen Push-Button wuerde der Mistifyer nur
-//   waehrend der Druckdauer laufen - dafuer das Serial-Kommando 't' nutzen.)
+//   This works for both a toggle (latching) and a slide switch: every
+//   physical position change immediately changes the state. (For a
+//   momentary push-button the mister would only run while the button is
+//   held - use the Serial 't' command instead in that case.)
 //
-//   Hysterese:
-//     RH >= 80.0 %  -> sperren
-//     RH <  78.0 %  -> wieder freigeben
-//     dazwischen    -> aktuellen Sperr-Zustand halten
+//   Hysteresis:
+//     RH >= 80.0 %  -> block
+//     RH <  78.0 %  -> release
+//     between -> hold current block state
 //
-//   Sensor-Fehler / -Ausfall -> MOSFET zwangsweise AUS (fail-safe).
+//   Sensor error / sensor missing -> MOSFET forced OFF (fail-safe).
 //
 // Pins (Feather V2):
-//   MOSFET SIG (lila)   -> 27
-//   MOSFET VCC (blau)   -> 3V
-//   MOSFET GND (grau)   -> GND  (links)
-//   SHT40 VCC  (rot)    -> 3V
-//   SHT40 GND  (blau)   -> GND  (rechts)
-//   SHT40 SDA  (weiss)  -> SDA  (GPIO22)
-//   SHT40 SCL  (orange) -> SCL  (GPIO20)
-//   Taster              -> GPIO33  und  GND  (Pulldown gegen GND, Pin gezogen via INPUT_PULLUP)
+//   MOSFET SIG (purple) -> 27
+//   MOSFET VCC (blue)   -> 3V
+//   MOSFET GND (gray)   -> GND  (left side)
+//   SHT40  VCC (red)    -> 3V
+//   SHT40  GND (blue)   -> GND  (right side)
+//   SHT40  SDA (white)  -> SDA  (GPIO22)
+//   SHT40  SCL (orange) -> SCL  (GPIO20)
+//   Switch              -> GPIO33  and  GND  (INPUT_PULLUP, closed = LOW)
 //
-// Hinweis zum Taster-GND:
-//   Der Feather V2 hat nur 2 GND-Pins. Beide sind oben schon belegt.
-//   Den Taster-GND einfach mit dem MOSFET-GND oder SHT40-GND verzwirbeln und
-//   gemeinsam in den jeweiligen GND-Pin stecken - elektrisch identisch.
+// Note about the switch GND:
+//   The Feather V2 only has 2 GND pins on its headers, both already in
+//   use. Twist the switch GND together with the MOSFET GND or the SHT40
+//   GND and plug both leads into the same GND pin - electrically
+//   identical.
 //
 // Library: Adafruit SHT4x (Library Manager).
 //
-// Serial: 115200, Newline.
-//   t -> userWantsOn umschalten (auch ohne Taster nutzbar)
-//   s -> Status anzeigen
-//   h -> Hilfe
+// Serial: 115200 baud, line ending "Newline".
+//   t -> toggle userWantsOn (works without a hardware switch)
+//   s -> show status
+//   h -> help
 
 #include <Wire.h>
 #include "Adafruit_SHT4x.h"
 
-// ---------- Konfiguration ----------
+// ---------- Configuration ----------
 const uint8_t MOSFET_PIN = 27;
 const uint8_t BUTTON_PIN = 33;
 const bool    MOSFET_ACTIVE_LOW = true;
 
-const float HUMIDITY_LIMIT_HIGH = 80.0;  // >= -> sperren
-const float HUMIDITY_LIMIT_LOW  = 78.0;  // <   -> wieder erlauben
+const float HUMIDITY_LIMIT_HIGH = 80.0;  // >= -> block
+const float HUMIDITY_LIMIT_LOW  = 78.0;  // <   -> release
 
 const uint32_t SAMPLE_INTERVAL_MS = 2000;
 const uint32_t DEBOUNCE_MS = 40;
 
-// ---------- Laufzeit-Status ----------
+// ---------- Runtime state ----------
 Adafruit_SHT4x sht4;
 bool sensorOk = false;
 
 bool userWantsOn = false;
-bool humidityBlocks = true;     // Boot-Default: gesperrt bis erste gueltige Messung
+bool humidityBlocks = true;     // boot default: blocked until first valid reading
 bool currentMosfetOn = false;
 
 uint32_t lastSampleMs = 0;
@@ -123,7 +123,7 @@ void printHelp() {
 
 // ---------- Setup ----------
 void setup() {
-  // MOSFET sicher AUS bevor pinMode greift (active-low: HIGH = aus).
+  // Force MOSFET OFF before pinMode takes effect (active-low: HIGH = off).
   uint8_t idleLevel = MOSFET_ACTIVE_LOW ? HIGH : LOW;
   digitalWrite(MOSFET_PIN, idleLevel);
   pinMode(MOSFET_PIN, OUTPUT);
@@ -137,7 +137,7 @@ void setup() {
   Serial.println("Humidity controller (with switch) starting...");
 
 #if defined(I2C_POWER)
-  // Feather V2: I2C-/STEMMA-QT-Versorgung einschalten.
+  // Feather V2: enable the I2C / STEMMA QT power rail.
   pinMode(I2C_POWER, OUTPUT);
   digitalWrite(I2C_POWER, HIGH);
   delay(10);
@@ -166,7 +166,7 @@ void setup() {
   printStatus();
 }
 
-// ---------- Sensor / Hysterese ----------
+// ---------- Sensor / hysteresis ----------
 void readSensorIfDue() {
   uint32_t now = millis();
   if (now - lastSampleMs < SAMPLE_INTERVAL_MS) return;
@@ -206,10 +206,10 @@ void readSensorIfDue() {
   }
 }
 
-// ---------- Schalter ----------
-// Nach Debounce wird die Schalter-Position direkt auf userWantsOn abgebildet.
-// Das macht sowohl Toggle- als auch Schiebe-Schalter brauchbar: jede
-// Positions-Aenderung fuehrt zu genau einer Zustandsaenderung.
+// ---------- Switch ----------
+// After debounce the switch position is mapped directly onto userWantsOn.
+// This makes both toggle/latching and slide switches usable: each
+// position change leads to exactly one state change.
 void readButton() {
   int reading = digitalRead(BUTTON_PIN);
   uint32_t now = millis();
@@ -224,7 +224,7 @@ void readButton() {
 
   if (reading != stableButtonState) {
     stableButtonState = reading;
-    bool desired = (stableButtonState == LOW);  // LOW = Schalter geschlossen = AN
+    bool desired = (stableButtonState == LOW);  // LOW = closed = ON
     if (desired != userWantsOn) {
       userWantsOn = desired;
       Serial.print("Switch -> userWantsOn=");
@@ -233,7 +233,7 @@ void readButton() {
   }
 }
 
-// ---------- Serial-Befehle ----------
+// ---------- Serial commands ----------
 void readSerial() {
   while (Serial.available()) {
     int c = Serial.read();
