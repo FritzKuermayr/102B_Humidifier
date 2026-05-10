@@ -19,17 +19,12 @@ venv/
 build/
 
 # Compiled Dynamixel C tools
-software/dynamixel_tools/id_scan
-software/dynamixel_tools/motor_calibration
-software/dynamixel_tools/motor_server
-software/dynamixel_tools/set_baud
-software/dynamixel_tools/set_baud_all
-software/dynamixel_tools/set_id
-software/dynamixel_tools/set_limits
-software/dynamixel_tools/walk_basic
-software/dynamixel_tools/walk_fast
-
-# Wristband / gesture training artefacts
-software/wristband_control/gesture_recognition/models/
-software/wristband_control/gesture_recognition/training_data/
-software/wristband_control/gesture_recognition/*.png
+software/quadruped/dynamixel_tools/id_scan
+software/quadruped/dynamixel_tools/motor_calibration
+software/quadruped/dynamixel_tools/motor_server
+software/quadruped/dynamixel_tools/set_baud
+software/quadruped/dynamixel_tools/set_baud_all
+software/quadruped/dynamixel_tools/set_id
+software/quadruped/dynamixel_tools/set_limits
+software/quadruped/dynamixel_tools/walk_basic
+software/quadruped/dynamixel_tools/walk_fast

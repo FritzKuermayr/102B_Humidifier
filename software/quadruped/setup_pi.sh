@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+QUAD_DIR="$PROJECT_DIR/software/quadruped"
 VENV_DIR="$PROJECT_DIR/.venv"
 
 echo "=== Installing Raspberry Pi system packages ==="
@@ -11,12 +12,12 @@ sudo apt install -y git build-essential python3-venv python3-pip
 echo "=== Installing DynamixelSDK for Python ==="
 python3 -m venv "$VENV_DIR"
 "$VENV_DIR/bin/pip" install --upgrade pip
-"$VENV_DIR/bin/pip" install -r "$PROJECT_DIR/software/requirements.txt"
+"$VENV_DIR/bin/pip" install -r "$QUAD_DIR/requirements.txt"
 
 echo "=== Optional: building Dynamixel C tools ==="
-if [ -d "$PROJECT_DIR/software/dynamixel_tools" ]; then
+if [ -d "$QUAD_DIR/dynamixel_tools" ]; then
   if [ -f "$HOME/DynamixelSDK/c/include/dynamixel_sdk.h" ]; then
-    make -C "$PROJECT_DIR/software/dynamixel_tools"
+    make -C "$QUAD_DIR/dynamixel_tools"
   else
     echo "Skipping optional Dynamixel C tools build:"
     echo "  $HOME/DynamixelSDK/c/include/dynamixel_sdk.h not found"
