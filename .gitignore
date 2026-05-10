@@ -1,4 +1,12 @@
+# OS / editor
 .DS_Store
+*.swp
+*.bak
+
+# Claude / IDE
+.claude/
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -7,6 +15,10 @@ venv/
 .pytest_cache/
 .ipynb_checkpoints/
 
+# Build outputs
+build/
+
+# Compiled Dynamixel C tools
 software/dynamixel_tools/id_scan
 software/dynamixel_tools/motor_calibration
 software/dynamixel_tools/motor_server
@@ -17,6 +29,7 @@ software/dynamixel_tools/set_limits
 software/dynamixel_tools/walk_basic
 software/dynamixel_tools/walk_fast
 
+# Wristband / gesture training artefacts
 software/wristband_control/gesture_recognition/models/
 software/wristband_control/gesture_recognition/training_data/
 software/wristband_control/gesture_recognition/*.png
