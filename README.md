@@ -8,13 +8,15 @@ This repository combines two subsystems used in the ME 102B project:
   control firmware and wiring docs.
 
 A small set of shared Dynamixel utilities lives at the top level under
-`tools/`.
+`tools/`. Course documents (reports, presentations, CAD, renders) are under
+[`docs/`](docs/) — see [`docs/README.md`](docs/README.md).
 
 ## Repository Layout
 
 ```text
 .
 ├── README.md
+├── docs/                            # Reports, presentations, CAD, renders
 ├── software/
 │   ├── humidifier/                  # ESP32 humidity control firmware + wiring
 │   │   ├── esp32_humidity_control/
